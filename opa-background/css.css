@@ -1,0 +1,26 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    background: #68a4ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+.screen {
+    position: absolute;
+    height: 350px;
+    width: 350px;
+    border-radius: 50%;
+    background: url(bg.png);
+    
+    cursor: none;
+    border: 3px solid rgb(186, 244, 245);
+}

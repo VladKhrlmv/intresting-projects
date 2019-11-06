@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snake</title>
+
+    <style>
+        html, body {padding: 0; margin: 0;}
+        * {box-sizing: border-box;}
+        body {background: #ddd; padding: 5px;}
+        canvas {
+            background: black;
+            margin: 0 auto;
+            display: block;
+        }
+        #score {
+            font-size: 60px;
+            font-weight: 700;
+            color:rgb(0, 0, 0);
+            text-align: center;
+        }
+        .ins {
+            font-size: 30px;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+    <div class="ins">press: p = pause | &nbsp;&nbsp;&nbsp; use: &#9668; &#9650; &#9660; &#9658; <br>
+                     press: r = reset &nbsp;&nbsp;|
+    
+    </div>
+    <div id="score"> Score: 90</div>
+    <canvas id="mc" width="1280" height="690"></canvas>
+
+    <script type="text/javascript">
+        window.onload = function() {
+            document.addEventListener('keydown', changeDirection);
+            setInterval(loop, 1000/60); //60fps
+        }
+
+        var 
+            canv                = document.getElementById('mc'),
+            ctx                 = canv.getContext('2d'),
+            gs = fkp            = false, // game started && first key pressed
+            speed = baseSpeed   = 3,
+            xv = yv             = 0, //velocity (x & y)
+            px                  = ~~(canv.width) / 2, //player position x
+            py                  = ~~(canv.height) / 2, //player position y
+            pw = ph             = 20, //player size
+            aw = ah             = 20, //apple size
+            apples              = [], //apples list
+            trail               = [], //trail elements list
+            tail                = 100, //tail size
+            tailSafeZone        = 20, //self eating protection
+            cooldown            = false, //is key in cooldown mode
+            score               = 0;
+
+
+        //game main loop
+        function loop() {
+            //логика
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canv.width, canv.height);
+
+
+            //движение
+            px += xv;
+            py += yv;
+
+            // логика границ
+            if( px > canv.width )
+                {px = 0;}
+
+            if( px + pw < 0 )
+                {px = canv.width;}
+
+            if( py + ph < 0 )
+                {py = canv.height;}
+
+            if( py > canv.height )
+                {py = 0;}
+
+            // paint the snake
+            ctx.fillStyle = 'lime';
+            for (var i = 0; i < trail.length; i++) {
+                ctx.fillStyle = trail[i].color || 'lime';
+                ctx.fillRect(trail[i].x, trail[i].y, pw, ph);
+            }
+
+            trail.push({x: px, y: py, color: ctx.fillStyle});
+
+
+            // limiter
+            if (trail.length > tail)
+            {
+                trail.shift();
+            }
+
+            //eaten
+            if (trail.length > tail)
+            {
+                trail.shift();
+            }
+
+            // столкновение
+            if (trail.length >= tail && gs)
+            {
+                for( var i = trail.length - tailSafeZone; i >= 0; i--)
+                {
+                    if (
+                        px < (trail[i].x + pw)
+                        && px + pw > trail[i].x
+                        && py < (trail[i].y + ph)
+                        && py + ph > trail[i].y
+                    )
+                    {
+                        tail = 10;
+                        speed = baseSpeed;
+                        document.getElementById('score').innerHTML = 'Score: 0';
+			gs = false;
+			xv = 0;
+			yv = 0;
+
+                        for( var t = 0; t < trail.length; t++){
+                            trail[t].color = 'red';
+                            if (t >= trail.length - tail)
+                                {break;}
+                        }
+                    }
+                }
+            }
+
+            // показываем яблочки
+            for ( var a = 0; a < apples.length; a++) {
+                ctx.fillStyle = apples[a].color;
+                ctx.fillRect(apples[a].x, apples[a].y, aw, ah);
+            }
+
+            // кушаем
+            for ( var a = 0; a < apples.length; a++) {
+                if (
+                    px < (apples[a].x + pw)
+                    && px + pw > apples[a].x
+                    && py < (apples[a].y + ph)
+                    && py + ph > apples[a].y
+                )
+                {
+                    apples.splice(a, 1);
+                    tail += 10;
+                    speed += .1;
+                    showScore();
+                    spawnApple();
+                    
+                    break;
+                }
+            }
+        }
+
+        function spawnApple() {
+            var newApple = {
+                    x: ~~(Math.random() * canv.width),
+                    y: ~~(Math.random() * canv.height),
+                    color: 'red'
+                };
+            if (
+                (newApple.x < aw || newApple.x > canv.width - aw)
+                ||
+                (newApple.y < ah || newApple.y > canv.height - ah)
+            )
+            {
+                spawnApple();
+                return;
+            }
+
+            //запрет спавна на теле змеи
+            for( var i = 0; i < tail.length; i++){
+                if (
+                    newApple.x < (trail[i].x + pw)
+                    && newApple.x + aw > trail[i].x
+                    && newApple.y < (trail[i].y + ph)
+                    && newApple.y + ah > trail[i].y
+                )
+                {
+                    spawnApple();
+                    return;
+                }
+
+            }
+
+            apples.push(newApple);
+
+            if (apples.length < 3 && ~~(Math.random() * 1000) > 700) {
+                spawnApple();
+            }
+        }
+
+        function rc() {
+            return '#' + ((~~(Math.random() * 225)).toString(16)) + ((~~(Math.random() * 225)).toString(16)) + ((~~(Math.random() * 225)).toString(16));
+        }
+
+        //velocity changer (controls)
+        function changeDirection(evt) {
+
+            if ( !fkp && [37,38,39,40].indexOf(evt.keyCode) > -1) {
+                setTimeout(function() {gs = true;}, 1000);
+                fkp = true;
+                spawnApple()
+            }
+
+            if(cooldown)
+                {return false;}
+            
+            if (evt.keyCode == 37 && (xv != speed)){ //left
+                setTimeout(function() {gs = true;}, 100);
+                xv = -speed; yv = 0;
+            }
+
+            if (evt.keyCode == 38 && (yv != speed)){ //top
+                setTimeout(function() {gs = true;}, 100);
+                xv = 0; yv = -speed;
+            }
+
+            if (evt.keyCode == 39 && (xv != -speed) ){ //right
+                setTimeout(function() {gs = true;}, 100);
+                xv = speed; yv = 0;
+            }
+
+            if (evt.keyCode == 40 && (yv != -speed)){ //down
+                setTimeout(function() {gs = true;}, 100);
+                xv = 0; yv = speed;
+            }
+
+            if (evt.keyCode == 32){
+                setTimeout(function() {gs = false;}, 100);
+                xv = 0; yv = 0;
+            }
+
+            if (evt.keyCode == 82){
+                xv = 0; yv = 0;
+            }
+            
+            cooldown = true;
+            setTimeout(function() {cooldown = false;}, 100);
+
+        }
+
+        function showScore() {
+            document.getElementById('score').innerHTML = 'Score: ' + trail.length;
+        }
+
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>background_slider</title>
+    <link rel="stylesheet" href="css.css">
+</head>
+<body>  
+    <div>
+        <h2 id="rangeValue"></h2>
+        <div id="fillRangeValue"></div>
+        <input type="range" name="" value="0" class="range" min="0" max="100" 
+        onmousemove="rangeSlider(this.value)"  
+        onchange="rangeSlider(this.value)">
+    </div>
+    <script type="text/javascript">
+        function  rangeSlider(value) {
+            document.getElementById('rangeValue').innerHTML = value;
+            document.getElementById('fillRangeValue').style.width = +value+"%";
+        }
+    </script>
+</body>
+</html>
